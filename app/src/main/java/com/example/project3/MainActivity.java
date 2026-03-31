@@ -48,12 +48,13 @@ public class MainActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
 
-        SharedPreferences pref = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
-        if (pref.getBoolean("isSet", false)) {
+        // Create the SharedPreferences
+        SharedPreferences sp = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
+        if (sp.getBoolean("isSet", false)) {
 
-            int savedHour = pref.getInt("hour", 12);
-            int savedMinute = pref.getInt("minute", 0);
-            int savedFreq = pref.getInt("frequency", 5);
+            int savedHour = sp.getInt("hour", 12);
+            int savedMinute = sp.getInt("minute", 0);
+            int savedFreq = sp.getInt("frequency", 5);
 
             TimePicker timePicker = findViewById(R.id.timePicker);
             timePicker.setHour(savedHour);
@@ -65,12 +66,11 @@ public class MainActivity extends AppCompatActivity {
             else if (savedFreq == 15) spinnerPosition = 3;
             spinner.setSelection(spinnerPosition);
 
-            long savedMillis = pref.getLong("saved_millis", System.currentTimeMillis());
+            long savedMillis = sp.getLong("saved_millis", System.currentTimeMillis());
             calendar.setTimeInMillis(savedMillis);
 
             calendarView.setDate(savedMillis);
         }
-
 
         // Set the button.
         Button btnSetUpdate = findViewById(R.id.btnSetUpdate);
@@ -90,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
         btnRemove.setOnClickListener(v -> {
             stop_sensing();
         });
-        updateNextAlarmDisplay();
     }
 
     @Override
@@ -111,30 +110,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateNextAlarmDisplay() {
-
-        android.widget.TextView tvNextAlarm = findViewById(R.id.tvNextAlarm);
-        if (tvNextAlarm == null) return;
-
-        SharedPreferences pref = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
-        boolean isSet = pref.getBoolean("isSet", false);
-
-        if (isSet) {
-            long nextMillis = pref.getLong("saved_millis", 0);
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", java.util.Locale.getDefault());
-            String dateString = sdf.format(new java.util.Date(nextMillis));
-            tvNextAlarm.setText("Next Alarm: " + dateString);
-        } else {
-            tvNextAlarm.setText("Next Alarm: Not Set");
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        updateNextAlarmDisplay();
-    }
-
     public void start_sensing_new() {
         Log.d("MainActivity", "start_sensing_new");
 
@@ -145,10 +120,6 @@ public class MainActivity extends AppCompatActivity {
 
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-
-        long alarmTime = calendar.getTimeInMillis();
 
         // get the chosen option from spinner.
         Spinner spinner = findViewById(R.id.my_spinner);
@@ -166,21 +137,19 @@ public class MainActivity extends AppCompatActivity {
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmTime, (long) frequency * 60 * 1000, pendingIntent);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), (long) frequency * 60 * 1000, pendingIntent);
 
         Toast.makeText(this, "Alarm created for " + hour + ":" + String.format("%02d", minute), Toast.LENGTH_LONG).show();
 
         // Save the chosen time in preferences.
-        SharedPreferences pref = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
+        SharedPreferences sp = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
         editor.putLong("saved_millis", calendar.getTimeInMillis());
         editor.putInt("hour", hour);
         editor.putInt("minute", minute);
         editor.putInt("frequency", frequency);
         editor.putBoolean("isSet", true);
         editor.apply();
-
-        updateNextAlarmDisplay();
     }
 
     public void stop_sensing() {
@@ -193,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         if (alarmManager != null) {
             alarmManager.cancel(pendingIntent);
@@ -205,8 +173,6 @@ public class MainActivity extends AppCompatActivity {
 
             SharedPreferences pref = getSharedPreferences("AlarmPrefs", MODE_PRIVATE);
             pref.edit().clear().apply();
-            updateNextAlarmDisplay();
         }
-
     }
 }

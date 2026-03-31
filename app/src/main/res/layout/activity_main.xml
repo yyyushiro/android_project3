@@ -60,14 +60,6 @@
                 android:layout_gravity="center_horizontal"
                 android:text="Remove" />
 
-        <TextView
-            android:id="@+id/tvNextAlarm"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:textSize="16sp"
-            />
     </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
